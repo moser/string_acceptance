@@ -49,6 +49,7 @@ class NormTest < Test::Unit::TestCase
     str = "lala"
     ct = OtherChild.new
     ct.thing = str
+    assert !ct.save
     assert_not_nil ct.errors.on(:thing)
   end
   

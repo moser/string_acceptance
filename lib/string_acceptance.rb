@@ -12,13 +12,14 @@ module StringAcceptance
       
       str = "def #{method}_with_string_acceptance=(obj)
           if obj.is_a?(String)
+            @errors_on_#{method} = false
             obj = #{class_name}.find_by_#{options[:parent_method]}(obj) " 
       if options[:create]
         str += "|| #{class_name}.create({:#{options[:parent_method]} => obj})"
       else
         str += "
                if obj.nil?
-                 errors.add(:#{method} ,'#{class_name} not found!')
+                 @errors_on_#{method} = true
                end"
       end
       str += <<-eos
@@ -27,6 +28,15 @@ module StringAcceptance
         end
         alias_method_chain :#{method}=, :string_acceptance
       eos
+      if !options[:create]
+        str += "
+          validate :no_errors_on_#{method}
+          def no_errors_on_#{method}
+            if @errors_on_#{method}
+              errors.add(:#{method} ,'#{class_name} not found!')
+            end
+          end"
+      end
       class_eval str
     end
   end
