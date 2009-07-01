@@ -6,6 +6,13 @@ class OtherChild < ActiveRecord::Base
   accepts_string_for :thing, :create => false, :parent_method => :lala
 end
 
+class Child3 < ActiveRecord::Base
+  set_table_name "child_things"
+  belongs_to :thing
+  accepts_string_for :thing, :create => false, :parent_method => [:name, :lala]
+end
+
+
 class NormTest < Test::Unit::TestCase
   def setup
     OtherChild.destroy_all
@@ -59,6 +66,19 @@ class NormTest < Test::Unit::TestCase
     t.save
     ct = OtherChild.new
     ct.thing = str
+    assert_equal t.id, ct.thing_id
+  end
+  
+  def test_should_find_by_name_or_lala
+    name = "sdaldsdfsdfasf"
+    lala = "sadfas"
+    t = Thing.create({:name => name, :lala => lala})
+    ct = Child3.new
+    ct.thing = name
+    assert_equal t.id, ct.thing_id
+    ct.thing = nil
+    assert_nil ct.thing_id
+    ct.thing = lala
     assert_equal t.id, ct.thing_id
   end
   

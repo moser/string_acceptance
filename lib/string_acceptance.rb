@@ -4,16 +4,25 @@ module StringAcceptance
   end
   
   module ClassMethods
+    #grumpf... I should refactor it (TODO)
     def accepts_string_for(method, args = {})
       class_name = self.reflect_on_association(method).class_name
       method = method.to_s
       options = { :parent_method => "name", :create => true }.merge(args)
-      options[:parent_method] = options[:parent_method].to_s
+      if options[:parent_method].is_a?(Array)  && options[:parent_method].size > 1
+        options[:parent_method].map! { |m| m.to_s }
+        options[:create] = false #can't create when we don't know where the string should go => could default to first element in the array
+        finder = "#{class_name}.find(:first, :conditions => [ '#{ (options[:parent_method].collect { |m| "#{m} = ?" }).join(' OR ') }', "+
+                                                              "#{ (['obj'] * options[:parent_method].size).join(', ') } ])"
+      else
+        options[:parent_method] = options[:parent_method].to_s
+        finder = "#{class_name}.find_by_#{options[:parent_method]}(obj) "
+      end
       
       str = "def #{method}_with_string_acceptance=(obj)
           if obj.is_a?(String)
             @errors_on_#{method} = false
-            obj = #{class_name}.find_by_#{options[:parent_method]}(obj) " 
+            obj = #{finder} " 
       if options[:create]
         str += "|| #{class_name}.create({:#{options[:parent_method]} => obj})"
       else
