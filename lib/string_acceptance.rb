@@ -8,15 +8,24 @@ module StringAcceptance
     def accepts_string_for(method, args = {})
       class_name = self.reflect_on_association(method).class_name
       method = method.to_s
-      options = { :parent_method => "name", :create => true }.merge(args)
+      options = { :parent_method => "name", :create => true, :ignore_case => true }.merge(args)
       if options[:parent_method].is_a?(Array)  && options[:parent_method].size > 1
         options[:parent_method].map! { |m| m.to_s }
         options[:create] = false #can't create when we don't know where the string should go => could default to first element in the array
-        finder = "#{class_name}.find(:first, :conditions => [ '#{ (options[:parent_method].collect { |m| "#{m} = ?" }).join(' OR ') }', "+
-                                                              "#{ (['obj'] * options[:parent_method].size).join(', ') } ])"
+        if options[:ignore_case]
+          finder = "#{class_name}.find(:first, :conditions => [ '#{ (options[:parent_method].collect { |m| "LOWER(#{m}) = ?" }).join(' OR ') }', "+
+                                                                "#{ (['obj.downcase'] * options[:parent_method].size).join(', ') } ])"
+        else
+          finder = "#{class_name}.find(:first, :conditions => [ '#{ (options[:parent_method].collect { |m| "#{m} = ?" }).join(' OR ') }', "+
+                                                                "#{ (['obj'] * options[:parent_method].size).join(', ') } ])"
+        end
       else
         options[:parent_method] = options[:parent_method].to_s
-        finder = "#{class_name}.find_by_#{options[:parent_method]}(obj) "
+        if options[:ignore_case]
+          finder = "#{class_name}.find(:first, :conditions => ['LOWER(#{options[:parent_method]}) = ?', obj.downcase]) "
+        else
+          finder = "#{class_name}.find_by_#{options[:parent_method]}(obj) "
+        end
       end
       
       str = "def #{method}_with_string_acceptance=(obj)

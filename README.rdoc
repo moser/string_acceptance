@@ -19,3 +19,6 @@ Also accepts an array of attributes (like [:name, :code] for finding a country b
   
 === :create
 Should new objects be created. Defaults to true
+
+=== :ignore_case
+Defaults to true

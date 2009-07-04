@@ -12,6 +12,23 @@ class Child3 < ActiveRecord::Base
   accepts_string_for :thing, :create => false, :parent_method => [:name, :lala]
 end
 
+class Child4 < ActiveRecord::Base
+  set_table_name "child_things"
+  belongs_to :thing
+  accepts_string_for :thing, :ignore_case => false, :create => false
+end
+
+class Child5 < ActiveRecord::Base
+  set_table_name "child_things"
+  belongs_to :thing
+  accepts_string_for :thing, :create => false
+end
+
+class Child6 < ActiveRecord::Base
+  set_table_name "child_things"
+  belongs_to :thing
+  accepts_string_for :thing, :create => false, :ignore_case => false, :parent_method => [:name, :lala]
+end
 
 class NormTest < Test::Unit::TestCase
   def setup
@@ -81,5 +98,33 @@ class NormTest < Test::Unit::TestCase
     ct.thing = lala
     assert_equal t.id, ct.thing_id
   end
+  
+  def test_should_not_ignore_case
+    name = 'AbCdEfG'
+    lala = 'aBcDeFg'
+    t = Thing.create(:name => name, :lala => lala)
+    ct = Child4.new
+    ct.thing = name.downcase
+    assert_nil ct.thing
+    ct = Child6.new
+    ct.thing = name.downcase
+    assert_nil ct.thing
+    ct.thing = lala.downcase
+    assert_nil ct.thing
+  end
+  
+  def test_should_ignore_case
+    name = 'AbCdEfG'
+    lala = 'aBcDeFg'
+    t = Thing.create(:name => name, :lala => lala)
+    ct = Child5.new
+    ct.thing = name.downcase
+    assert_equal t, ct.thing
+    ct = Child3.new
+    ct.thing = name.downcase
+    assert_equal t, ct.thing
+    ct.thing = lala.downcase
+    assert_equal t, ct.thing
+  end 
   
 end
