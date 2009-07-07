@@ -30,6 +30,12 @@ class Child6 < ActiveRecord::Base
   accepts_string_for :thing, :create => false, :ignore_case => false, :parent_method => [:name, :lala]
 end
 
+class Child7 < ActiveRecord::Base
+  set_table_name "child_things"
+  belongs_to :thing
+  accepts_string_for :thing, :create => false, :may_nil => false
+end
+
 class NormTest < Test::Unit::TestCase
   def setup
     OtherChild.destroy_all
@@ -125,6 +131,16 @@ class NormTest < Test::Unit::TestCase
     assert_equal t, ct.thing
     ct.thing = lala.downcase
     assert_equal t, ct.thing
-  end 
+  end
+  
+  def test_may_not_nil
+    name = "aa"
+    non_existant_name = "bb"
+    t = Thing.create(:name => name)
+    ct = Child7.create(:thing => name)
+    assert_equal t, ct.thing
+    ct.thing = non_existant_name
+    assert_equal t, ct.thing
+  end
   
 end

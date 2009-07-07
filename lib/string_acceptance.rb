@@ -8,7 +8,7 @@ module StringAcceptance
     def accepts_string_for(method, args = {})
       class_name = self.reflect_on_association(method).class_name
       method = method.to_s
-      options = { :parent_method => "name", :create => true, :ignore_case => true }.merge(args)
+      options = { :parent_method => "name", :create => true, :ignore_case => true, :may_nil => true }.merge(args)
       if options[:parent_method].is_a?(Array)  && options[:parent_method].size > 1
         options[:parent_method].map! { |m| m.to_s }
         options[:create] = false #can't create when we don't know where the string should go => could default to first element in the array
@@ -34,10 +34,15 @@ module StringAcceptance
             obj = #{finder} " 
       if options[:create]
         str += "|| #{class_name}.create({:#{options[:parent_method]} => obj})"
-      else
+      elsif options[:may_nil]
         str += "
                if obj.nil?
                  @errors_on_#{method} = true
+               end"
+      else #may_nil => false
+        str += "
+               if obj.nil?
+                 obj = self.#{method}
                end"
       end
       str += <<-eos

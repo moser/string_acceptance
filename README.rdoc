@@ -22,3 +22,7 @@ Should new objects be created. Defaults to true
 
 === :ignore_case
 Defaults to true
+
+=== :may_nil
+Defaults to true.
+If false, after there was no object found, the old value will be restored rather than setting it to nil. Apparently only works when :create is false.
